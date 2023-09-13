@@ -1,0 +1,27 @@
+{
+  "name": "dixit-voter-service",
+  "version": "1.0.0",
+  "description": "Dixit voter backend service",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "dev": "nodemon index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dgladovic/dixit-voter-service.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dgladovic/dixit-voter-service/issues"
+  },
+  "homepage": "https://github.com/dgladovic/dixit-voter-service#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
