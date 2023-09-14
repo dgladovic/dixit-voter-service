@@ -15,34 +15,9 @@ const io = socketio(server,{
     }
 });
 
-let players = [];
+let players = new Array();
 
-let cards = [
-    {
-        id: "1",
-        owner: " ",
-        choosers: new Array(),
-        socketid: " "
-    },
-    {
-        id: "2",
-        owner: " ",
-        choosers: new Array(),
-        socketid: " "
-    },
-    {
-        id: "3",
-        owner: " ",
-        choosers: new Array(),
-        socketid: " "
-    },
-    {
-        id: "4",
-        owner: " ",
-        choosers: new Array(),
-        socketid: " "
-    }
-]
+let cards = new Array();
 
 function Card(id,owner,choosers,socketId){
     this.id = id;
@@ -73,19 +48,18 @@ io.on('connection',(socket)=>{
     socket.on('joinSession',(message)=>{
         let selectedPlayer = JSON.parse(message);
         let newPlayer = new Player(selectedPlayer.name,socket.id,selectedPlayer.score);
-        let playChecker = players.filter((player) => player.name === newPlayer.name);
+        let playChecker = players.filter((player) => player.socketId === newPlayer.socketId);
         if(playChecker.length <= 0){
             players.push(newPlayer);
-            let newCard = new Card(cards.length + 1,"",new Array(),socket.id);
+            let newCard = new Card(cards.length,"",new Array(),socket.id);
             cards.push(newCard);
         }
+        io.emit('cardList', JSON.stringify(cards));
     })
-
-    socket.broadcast.emit('message', JSON.stringify(cards));
 
     socket.on('cardVote',(message)=>{
         let playerSelection = JSON.parse(message);
-        let cardInd = cards.findIndex( (card) => card.id === playerSelection.id);
+        let cardInd = cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
         let chosenCard = cards[cardInd];
         let choosersArray = chosenCard.choosers;
 
@@ -106,7 +80,7 @@ io.on('connection',(socket)=>{
 
     socket.on('ownerVote',(message)=>{
         let playerSelection = JSON.parse(message);
-        let cardInd = cards.findIndex( (card) => card.id === playerSelection.id);
+        let cardInd = cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
         let chosenCard = cards[cardInd];
         let playerReference = players.find((player) => player.name === playerSelection.player)
         chosenCard.owner = playerReference;
