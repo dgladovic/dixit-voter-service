@@ -142,6 +142,14 @@ io.on('connection',(socket)=>{
         io.emit('message',players);
     })
 
+    socket.on('resetCards',()=>{
+        cards.forEach((card) =>{
+            card.choosers = new Array();
+            card.owner = new Object();
+        })
+        io.emit('message',JSON.stringify(cards));
+    })
+
     socket.on('disconnect',()=>{
         const user = removePlayer(socket.id);
         if(user){
