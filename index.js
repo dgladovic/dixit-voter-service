@@ -133,7 +133,7 @@ io.on('connection',(socket)=>{
         room.cards.forEach( (card,cardIndex) => {
             if(card.owner.name === storyTeller.name){ // ako je vlasnik karte pripovedac
                 if(card.choosers.length === 0|| 
-                card.choosers.length === cards.length){ // ukoliko niko nije glasaso za pripovedaca ili svi
+                card.choosers.length === room.cards.length){ // ukoliko niko nije glasaso za pripovedaca ili svi
                     room.players.forEach( (player) => player.score = player.score + 2);
                     storyTeller.score = storyTeller.score - 2;
                 }
