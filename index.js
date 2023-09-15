@@ -133,7 +133,7 @@ io.on('connection',(socket)=>{
         room.cards.forEach( (card,cardIndex) => {
             if(card.owner.name === storyTeller.name){ // ako je vlasnik karte pripovedac
                 if(card.choosers.length === 0|| 
-                card.choosers.length === room.cards.length){ // ukoliko niko nije glasaso za pripovedaca ili svi
+                card.choosers.length === room.cards.length - 1){ // ukoliko niko nije glasaso za pripovedaca ili svi
                     room.players.forEach( (player) => player.score = player.score + 2);
                     storyTeller.score = storyTeller.score - 2;
                 }
@@ -142,6 +142,7 @@ io.on('connection',(socket)=>{
                         let cardChooserReference = room.players.find((player) => player.name === chooser.name);
                         cardChooserReference.score = cardChooserReference.score + 2;  //ovde treba da se u owners prosledjuju objekti i reference ka njima a ne vrednosti stringova
                     })
+                    storyTeller.score = storyTeller.score + 2;
                 }
             }
             else{ // ovde napisati logiku za racunanje poena za durge igr
@@ -149,7 +150,7 @@ io.on('connection',(socket)=>{
                 let cardOwnerReference = room.players.find((player) => player.name === cardOwner.name);
                 if(cardOwner){
                     card.choosers.forEach((e) => {
-                        cardOwnerReference.score = cardOwnerReference.score + 1; 
+                        cardOwnerReference.score = cardOwnerReference.score + 1;
                     });
                 }
             }
