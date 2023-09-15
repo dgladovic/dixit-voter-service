@@ -16,7 +16,7 @@ const io = socketio(server,{
 });
 
 let players = new Array();
-
+let rooms = new Map();
 let cards = new Array();
 
 function Card(id,owner,choosers,socketId){
@@ -45,69 +45,108 @@ function removePlayer(id){
 io.on('connection',(socket)=>{
     console.log('New WS Connectionr...');
 
-    socket.on('joinSession',(message)=>{
-        let selectedPlayer = JSON.parse(message);
-        let newPlayer = new Player(selectedPlayer.name,socket.id,selectedPlayer.score);
-        let playChecker = players.filter((player) => player.socketId === newPlayer.socketId);
-        if(playChecker.length <= 0){
-            players.push(newPlayer);
-            let newCard = new Card(cards.length,"",new Array(),socket.id);
-            cards.push(newCard);
+    io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
+
+    socket.on('joinRoom', (data) => {
+        const { playerName, roomName } = JSON.parse(data);
+
+        // Check if the room exists
+        const room = rooms.get(roomName);
+
+        if (room) {
+            // Add the participant to the room
+            socket.join(roomName);
+            // ova linija se konektuje na tu sobu, kao podrute u soketima
+
+            // Notify the participant that they successfully joined the room
+            socket.emit('roomJoined', room);
+
+            // Broadcast the updated room list to all connected clients
+
+            // Join the session with player's information
+            let selectedPlayer = {
+                name: playerName,
+                socketId: socket.id,
+                score: 0,
+            };
+            // room.players.push(socket.id);
+            let playChecker = room.players.filter((player) => player.socketId === socket.id);
+            if (playChecker.length <= 0) {
+                room.players.push(selectedPlayer);
+                let newCard = new Card(room.cards.length, "", new Array(), socket.id);
+                room.cards.push(newCard);
+            }
+            io.to(roomName).emit('cardList', JSON.stringify(room.cards));
+        } else {
+            // Notify the participant that the room does not exist
+            socket.emit('roomNotFound');
         }
-        io.emit('cardList', JSON.stringify(cards));
+    });
+
+    socket.on('createRoom',(message)=>{
+        rooms.set(message,{
+            players: new Array(),
+            cards: new Array(),
+            name: message
+        });
+        io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
     })
 
     socket.on('cardVote',(message)=>{
         let playerSelection = JSON.parse(message);
-        let cardInd = cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
-        let chosenCard = cards[cardInd];
+        
+        const room = rooms.get(playerSelection.room);
+        let cardInd = room.cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
+        let chosenCard = room.cards[cardInd];
         let choosersArray = chosenCard.choosers;
 
         choserInd = choosersArray.findIndex( (chooser) => chooser.name === playerSelection.player);
-        let playerReference = players.find((player) => player.name === playerSelection.player)
+        let playerReference = room.players.find((player) => player.name === playerSelection.player)
         if(choserInd === -1){   // ukoliko nije pronadjen index, to znaci da igrac glasa za ovu kartu
             choosersArray.push(playerReference);
             // potrebno je skinuti glasove sa ostalih karata ukoliko je glasao za njih
-            cards.forEach((card,index) => {
+            room.cards.forEach((card,index) => {
                 if(index !== cardInd){      //samo ako ta karta se ne poklapa sa vec glasanom skidanje glasova
                     let voterPosition = card.choosers.findIndex((chooser) => chooser.name === playerReference.name);
                     card.choosers.splice(voterPosition,1);
                 }
             })
         }
-        io.emit('message',JSON.stringify(cards));
+        io.to(room.name).emit('message',JSON.stringify(room.cards));
     })
 
     socket.on('ownerVote',(message)=>{
         let playerSelection = JSON.parse(message);
-        let cardInd = cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
-        let chosenCard = cards[cardInd];
-        let playerReference = players.find((player) => player.name === playerSelection.player)
+        const room = rooms.get(playerSelection.room);
+        let cardInd = room.cards.findIndex( (card) => card.id === parseInt(playerSelection.id,10));
+        let chosenCard = room.cards[cardInd];
+        let playerReference = room.players.find((player) => player.name === playerSelection.player)
         chosenCard.owner = playerReference;
-        io.emit('message',JSON.stringify(cards));
+        io.to(room.name).emit('message',JSON.stringify(room.cards));
     })
 
     socket.on('votingResults',(voteStarter)=>{
         // get storyteller player from front-end message
         let playerReference = JSON.parse(voteStarter);
-        let storyTeller = players.find((player) => player.name === playerReference.name);
-        cards.forEach( (card,cardIndex) => {
+        const room = rooms.get(playerReference.room);
+        let storyTeller = room.players.find((player) => player.name === playerReference.name);
+        room.cards.forEach( (card,cardIndex) => {
             if(card.owner.name === storyTeller.name){ // ako je vlasnik karte pripovedac
                 if(card.choosers.length === 0|| 
                 card.choosers.length === cards.length){ // ukoliko niko nije glasaso za pripovedaca ili svi
-                    players.forEach( (player) => player.score = player.score + 2);
+                    room.players.forEach( (player) => player.score = player.score + 2);
                     storyTeller.score = storyTeller.score - 2;
                 }
                 else{
                     card.choosers.forEach((chooser) =>{
-                        let cardChooserReference = players.find((player) => player.name === chooser.name);
+                        let cardChooserReference = room.players.find((player) => player.name === chooser.name);
                         cardChooserReference.score = cardChooserReference.score + 2;  //ovde treba da se u owners prosledjuju objekti i reference ka njima a ne vrednosti stringova
                     })
                 }
             }
             else{ // ovde napisati logiku za racunanje poena za durge igr
                 let cardOwner = card.owner;
-                let cardOwnerReference = players.find((player) => player.name === cardOwner.name);
+                let cardOwnerReference = room.players.find((player) => player.name === cardOwner.name);
                 if(cardOwner){
                     card.choosers.forEach((e) => {
                         cardOwnerReference.score = cardOwnerReference.score + 1; 
@@ -115,17 +154,19 @@ io.on('connection',(socket)=>{
                 }
             }
         })
-        io.emit('messageRes',JSON.stringify(players));
+        io.to(room.name).emit('messageRes',JSON.stringify(room.players));
     })
 
-    socket.on('resetCards',()=>{
-        cards.forEach((card) =>{
+    socket.on('resetCards',(message)=>{
+        const room = rooms.get(message);
+        room.cards.forEach((card) =>{
             card.choosers = new Array();
             card.owner = new Object();
         })
-        io.emit('message',JSON.stringify(cards));
+        io.to(message).emit('message',JSON.stringify(room.cards));
     })
 
+    // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
         const user = removePlayer(socket.id);
         if(user){
