@@ -90,9 +90,9 @@ io.on('connection',(socket)=>{
     socket.on('votingResults',(voteStarter)=>{
         // get storyteller player from front-end message
         let playerReference = JSON.parse(voteStarter);
-        let storyTeller = players.find((player) => player.name === playerReference.player);
+        let storyTeller = players.find((player) => player.name === playerReference.name);
         cards.forEach( (card,cardIndex) => {
-            if(card.owner === storyTeller){ // ako je vlasnik karte pripovedac
+            if(card.owner.name === storyTeller.name){ // ako je vlasnik karte pripovedac
                 if(card.choosers.length === 0|| 
                 card.choosers.length === cards.length){ // ukoliko niko nije glasaso za pripovedaca ili svi
                     players.forEach( (player) => player.score = player.score + 2);
@@ -108,12 +108,14 @@ io.on('connection',(socket)=>{
             else{ // ovde napisati logiku za racunanje poena za durge igr
                 let cardOwner = card.owner;
                 let cardOwnerReference = players.find((player) => player.name === cardOwner.name);
-                card.choosers.forEach((e) => {
-                    cardOwnerReference.score = cardOwnerReference.score + 1; 
-                });
+                if(cardOwner){
+                    card.choosers.forEach((e) => {
+                        cardOwnerReference.score = cardOwnerReference.score + 1; 
+                    });
+                }
             }
         })
-        io.emit('message',players);
+        io.emit('messageRes',JSON.stringify(players));
     })
 
     socket.on('resetCards',()=>{
