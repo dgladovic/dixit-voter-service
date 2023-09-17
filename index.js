@@ -26,10 +26,11 @@ function Card(id,owner,choosers,socketId){
     this.socketId = socketId;
 }
 
-function Player(name,socketId,score){
+function Player(name,socketId,score,voted){
     this.socketId = socketId;
     this.name = name;
     this.score = score;
+    this.voted = voted;
 }
 
 function removePlayer(id){
@@ -68,6 +69,7 @@ io.on('connection',(socket)=>{
                 name: playerName,
                 socketId: socket.id,
                 score: 0,
+                voted: false
             };
             // room.players.push(socket.id);
             let playChecker = room.players.filter((player) => player.socketId === socket.id);
@@ -104,6 +106,7 @@ io.on('connection',(socket)=>{
         let playerReference = room.players.find((player) => player.name === playerSelection.player)
         if(choserInd === -1){   // ukoliko nije pronadjen index, to znaci da igrac glasa za ovu kartu
             choosersArray.push(playerReference);
+            playerReference.voted = true;
             // potrebno je skinuti glasove sa ostalih karata ukoliko je glasao za njih
             room.cards.forEach((card,index) => {
                 if(index !== cardInd){      //samo ako ta karta se ne poklapa sa vec glasanom skidanje glasova
@@ -113,6 +116,7 @@ io.on('connection',(socket)=>{
             })
         }
         io.to(room.name).emit('message',JSON.stringify(room.cards));
+        io.to(room.name).emit('playerVoteStatus',JSON.stringify(room.players));
     })
 
     socket.on('ownerVote',(message)=>{
@@ -164,7 +168,11 @@ io.on('connection',(socket)=>{
             card.choosers = new Array();
             card.owner = new Object();
         })
+        room.players.forEach((player)=>{
+            player.voted = false;
+        });
         io.to(message).emit('message',JSON.stringify(room.cards));
+        io.to(message).emit('playerVoteStatus',JSON.stringify(room.players));
     })
 
     // ovo jos uvek nije zavrseno sa rooms
