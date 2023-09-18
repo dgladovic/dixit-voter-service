@@ -151,7 +151,12 @@ io.on('connection',(socket)=>{
             })
         }
         io.to(room.name).emit('message',JSON.stringify(room.cards));
-        io.to(room.name).emit('playerVoteStatus',JSON.stringify(room.players));
+        // mozda ovde slati samo igrace koji glasaju a da se storyteller izbaci iz ovog niza
+
+        let modifiedPlayers = [...room.players];
+        let storyTellerInd = modifiedPlayers.findIndex((player) => player.name === room.storyTeller.name);
+        modifiedPlayers.splice(storyTellerInd,1);
+        io.to(room.name).emit('playerVoteStatus',JSON.stringify(modifiedPlayers));
     })
 
     socket.on('ownerVote',(message)=>{
