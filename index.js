@@ -196,8 +196,8 @@ io.on('connection',(socket)=>{
             else{ // ovde napisati logiku za racunanje poena za durge igr
                 let cardOwner = card.owner;
                 let cardOwnerReference = room.players.find((player) => player.name === cardOwner.name);
-                if(cardOwner){
-                    card.choosers.forEach((e) => {
+                if(cardOwner && cardOwnerReference){    // ova linija resava problem ako na karti ne postoji owner, ali to je nemougc scenario, nego dvoje ljudi greskom
+                    card.choosers.forEach((e) => {      // glasaju za istu kartu kao vlasnici, ovo treba da se error checkuje
                         cardOwnerReference.score = cardOwnerReference.score + 1;
                     });
                 }
