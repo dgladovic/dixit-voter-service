@@ -40,6 +40,9 @@ function removePlayer(id){
     }
 }
 
+function randomIntFromInterval(min, max) { // min and max included 
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
 
 //Run when a client connects
 
@@ -89,9 +92,41 @@ io.on('connection',(socket)=>{
         rooms.set(message,{
             players: new Array(),
             cards: new Array(),
-            name: message
+            name: message,
+            storyTeller: new Object()
         });
         io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
+    })
+
+    // this starts the game
+    socket.on('startGame',(message)=>{
+        const parsed = JSON.parse(message);
+        const room = rooms.get(parsed.room);
+        
+        const maxNumber = room.players.length;
+        const rndInt = randomIntFromInterval(1, maxNumber);
+        const startingStoryteller = room.players[rndInt-1];
+        room.storyTeller = startingStoryteller;
+
+        io.to(room.name).emit('storyteller', JSON.stringify(startingStoryteller));
+    })
+
+    // get who is storyteller
+    socket.on('getstoryteller',(message)=>{
+        const parsed = JSON.parse(message);
+        const room = rooms.get(parsed.room);
+        const storyTellerRef = room.storyTeller;
+        let newStoryTeller;
+
+        let storyTellerInd = room.players.findIndex((player) => player.name === storyTellerRef.name);
+        if(storyTellerInd === room.players.length - 1){ //znaci da je poslednji igrac bio storyTell
+            newStoryTeller = room.players[0];
+            room.storyTeller = newStoryTeller;
+        }else{
+            newStoryTeller = room.players[storyTellerInd + 1];
+            room.storyTeller = newStoryTeller;
+        }
+        io.to(room.name).emit('storyteller', JSON.stringify(newStoryTeller));
     })
 
     socket.on('cardVote',(message)=>{
