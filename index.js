@@ -201,6 +201,8 @@ io.on('connection',(socket)=>{
                         cardOwnerReference.score = cardOwnerReference.score + 1;
                     });
                 }
+                // ukoliko nema cardOwnera, onda treba da se napravi novi message
+                // koji ce da kaze da za ovu kartu nema vlasnika, i da on treba da glasa za nju
             }
         })
         io.to(room.name).emit('messageRes',JSON.stringify(room.players));
