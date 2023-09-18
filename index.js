@@ -72,7 +72,8 @@ io.on('connection',(socket)=>{
                 name: playerName,
                 socketId: socket.id,
                 score: 0,
-                voted: false
+                voted: false,
+                votedOwnership: false
             };
             // room.players.push(socket.id);
             let playChecker = room.players.filter((player) => player.socketId === socket.id);
@@ -166,7 +167,10 @@ io.on('connection',(socket)=>{
         let chosenCard = room.cards[cardInd];
         let playerReference = room.players.find((player) => player.name === playerSelection.player)
         chosenCard.owner = playerReference;
+        playerReference.votedOwnership = true;
+
         io.to(room.name).emit('message',JSON.stringify(room.cards));
+        io.to(room.name).emit('playerOwnershipStatus',JSON.stringify(room.players));
     })
 
     socket.on('votingResults',(voteStarter)=>{
@@ -210,9 +214,11 @@ io.on('connection',(socket)=>{
         })
         room.players.forEach((player)=>{
             player.voted = false;
+            player.votedOwnership = false;
         });
         io.to(message).emit('message',JSON.stringify(room.cards));
         io.to(message).emit('playerVoteStatus',JSON.stringify(room.players));
+        io.to(message).emit('playerOwnershipStatus',JSON.stringify(room.players));
     })
 
     // ovo jos uvek nije zavrseno sa rooms
