@@ -33,15 +33,33 @@ function Player(name,socketId,score,voted){
     this.voted = voted;
 }
 
-function removePlayer(id){
-    const index = cards.findIndex(card => card.socketId === id);
-    if(index !== -1){
-        return cards.splice(index,1);
+function removePlayer(id,room){
+    const cardIndex = room.cards.findIndex(card => card.socketId === id);
+    const playerIndex = room.players.findIndex(player => player.socketId === id);
+    if(cardIndex !== -1){
+        return { 
+            card: room.cards.splice(cardIndex,1),
+            player: room.players.splice(playerIndex,1) 
+        }
     }
 }
 
 function randomIntFromInterval(min, max) { // min and max included 
     return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+function getRoom(id){
+    const allRooms = Array.from(rooms.values());
+    for(let i = 0; i < allRooms.length; i++){
+        let roomName = allRooms[i]; //naziv sobe
+        let room = rooms.get(roomName.name); // dovuci sobu
+        for(let j = 0; j < room.cards.length; j++){
+            let card = room.cards[j];
+            if(card.socketId === id){
+                return room;
+            }
+        }
+    }
 }
 
 //Run when a client connects
@@ -225,9 +243,16 @@ io.on('connection',(socket)=>{
 
     // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
-        const user = removePlayer(socket.id);
-        if(user){
-            io.emit('message',JSON.stringify(cards));
+        const room = getRoom(socket.id);
+        if(room){
+            const {card, player} = removePlayer(socket.id,room);
+            if(card){
+                io.to(room.name).emit('cardList',JSON.stringify(room.cards));
+            }
+            if(room.cards.length === 0){ //znaci da vise nema kartica u ovoj sobi, pa moze soba da se obrise
+                rooms.delete(room.name);
+                io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
+            }
         }
     })
 });
