@@ -62,6 +62,15 @@ function getRoom(id){
     }
 }
 
+io.use((socket, next) => {
+    const name = socket.handshake.auth.name;
+    if (!name) {
+      return next(new Error("invalid username"));
+    }
+    socket.name = name;
+    next();
+  });
+
 //Run when a client connects
 
 io.on('connection',(socket)=>{
