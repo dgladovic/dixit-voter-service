@@ -88,6 +88,7 @@ io.use((socket, next) => {
     socket.userID = crypto.randomUUID();
     socket.name = name;
     socket.userScore = 0;
+    socket.roomName = '';
     next();
   });
 
@@ -112,29 +113,58 @@ io.on('connection',(socket)=>{
     io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
 
     socket.on('joinRoom', (data) => {
-        const { playerName, roomName } = JSON.parse(data);
+        const { playerName, roomName, reconnect } = JSON.parse(data);
         // Check if the room exists
-        const room = rooms.get(roomName);
-
+        const room = rooms.get(roomName,'kartice-0');
         if (room) {
             socket.join(roomName);
             socket.emit('roomJoined', room);
             let selectedPlayer = {
                 name: playerName,
-                socketId: socket.id,
+                socketId: socket.userID,
                 score: 0,
                 voted: false,
                 votedOwnership: false
             };
-            let playChecker = room.players.filter((player) => player.socketId === socket.id);
-            if (playChecker.length <= 0) {
+            let playChecker = room.players.filter((player) => player.name === playerName);
+            if (playChecker.length <= 0 && !reconnect) {
                 room.players.push(selectedPlayer);
                 sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
-                    score: selectedPlayer.score,                 // javni id-
-                    roomName: roomName
+                    sessionID: socket.sessionID,
+                    userID: socket.userID,                      
+                    userScore: selectedPlayer.score,                 
+                    name: socket.name,
+                    roomName: roomName                    
                 });
-                let newCard = new Card(room.cards.length, "", new Array(), socket.id);
+                let newCard = new Card(room.cards.length, "", new Array(), socket.userID);
                 room.cards.push(newCard);
+            }
+            if(reconnect === 'yes'){
+                let selectedPlayer = {
+                    name: socket.name,
+                    socketId: socket.userID,
+                    score: socket.userScore,
+                    voted: false,
+                    votedOwnership: false
+                };
+                let playChecker = room.players.filter((player) => player.name === playerName);
+                if (playChecker.length <= 0) {
+                    room.players.push(selectedPlayer);
+                    sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
+                        sessionID: socket.sessionID,
+                        userID: socket.userID,                      
+                        userScore: selectedPlayer.score,                 
+                        name: socket.name,
+                        roomName: roomName                    
+                    });
+                    let newCard = new Card(room.cards.length, "", new Array(), socket.userID);
+                    room.cards.push(newCard);
+                    room.cards.forEach((card,ind) => card.id = ind);
+                    console.log(room.storyTeller,'kartice-3');
+
+                    socket.emit('storyteller',JSON.stringify(room.storyTeller));
+                }
+                console.log(room.players,room.cards,room.storyTeller);
             }
             io.to(roomName).emit('cardList', JSON.stringify(room.cards));
         } else {
@@ -193,6 +223,7 @@ io.on('connection',(socket)=>{
 
         choserInd = choosersArray.findIndex( (chooser) => chooser.name === playerSelection.player);
         let playerReference = room.players.find((player) => player.name === playerSelection.player)
+        console.log(playerSelection,playerReference,'stari');
         if(choserInd === -1){   // ukoliko nije pronadjen index, to znaci da igrac glasa za ovu kartu
             choosersArray.push(playerReference);
             playerReference.voted = true;
@@ -278,14 +309,13 @@ io.on('connection',(socket)=>{
 
     // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
-        const room = getRoom(socket.id);
+        const room = getRoom(socket.userID);
         if(room){
-            const {card, player} = removePlayer(socket.id,room);
+            const {card, player} = removePlayer(socket.userID,room);
             if(card){
                 io.to(room.name).emit('cardList',JSON.stringify(room.cards));
             }
             // if(room.cards.length === 0){ //znaci da vise nema kartica u ovoj sobi, pa moze soba da se obrise
-            //     console.log('room-lost');
             //     rooms.delete(room.name);
             //     io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
             // }
