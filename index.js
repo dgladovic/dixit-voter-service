@@ -3,6 +3,9 @@ const http = require('http');
 // za pokretanje web socketa i socket.io
 const express = require('express');
 const socketio = require('socket.io');
+const crypto = require('crypto');
+const { InMemorySessionStore } = require("./sessionStore");
+const sessionStore = new InMemorySessionStore();
 
 const app = express();
 const PORT = 4000 || process.env.PORT;
@@ -63,10 +66,24 @@ function getRoom(id){
 }
 
 io.use((socket, next) => {
+    const sessionID = socket.handshake.auth.sessionID;
+    if (sessionID) {
+      console.log(sessionID)
+      // find existing session
+      const session = sessionStore.findSession(sessionID);
+      if (session) {
+        socket.sessionID = sessionID;
+        socket.userID = session.userID;
+        socket.name = session.name;
+        return next();
+      }
+    }
     const name = socket.handshake.auth.name;
     if (!name) {
       return next(new Error("invalid username"));
     }
+    socket.sessionID = crypto.randomUUID();
+    socket.userID = crypto.randomUUID();
     socket.name = name;
     next();
   });
@@ -76,11 +93,21 @@ io.use((socket, next) => {
 io.on('connection',(socket)=>{
     console.log('New WS Connectionr...');
 
+    sessionStore.saveSession(socket.sessionID, {
+        userID: socket.userID,
+        name: socket.name,
+    });
+
+    socket.emit("session", {
+        sessionID: socket.sessionID,
+        userID: socket.userID,
+    });
+
     io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
 
     socket.on('joinRoom', (data) => {
         const { playerName, roomName } = JSON.parse(data);
-
+        console.log(data);
         // Check if the room exists
         const room = rooms.get(roomName);
 
@@ -252,6 +279,7 @@ io.on('connection',(socket)=>{
 
     // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
+        console.log(io.in(socket.userID).allSockets());
         const room = getRoom(socket.id);
         if(room){
             const {card, player} = removePlayer(socket.id,room);
