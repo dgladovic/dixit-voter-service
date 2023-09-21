@@ -5,12 +5,12 @@ const express = require('express');
 const socketio = require('socket.io');
 
 const app = express();
-const PORT = 3000 || process.env.PORT;
+const PORT = 4000 || process.env.PORT;
 
 const server = http.createServer(app);
 const io = socketio(server,{
     cors:{
-        origin: 'http://localhost:3001',
+        origin: `${process.env.BACKEND_URL}`,
         methods: ['GET', 'POST'],
     }
 });
