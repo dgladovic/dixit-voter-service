@@ -320,7 +320,6 @@ io.on('connection',(socket)=>{
                 roomName: receivedSession.roomName
             });
         }
-        const session2 = sessionStore.findSession(socket.sessionID);
     })
 
     // ovo jos uvek nije zavrseno sa rooms
