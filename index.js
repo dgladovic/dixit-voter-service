@@ -147,7 +147,6 @@ io.on('connection',(socket)=>{
                     voted: false,
                     votedOwnership: false
                 };
-                console.log(selectedPlayer,'KarTICA-5');
                 let playChecker = room.players.filter((player) => player.name === playerName);
                 if (playChecker.length <= 0) {
                     room.players.push(selectedPlayer);
@@ -161,11 +160,9 @@ io.on('connection',(socket)=>{
                     let newCard = new Card(room.cards.length, "", new Array(), socket.userID);
                     room.cards.push(newCard);
                     room.cards.forEach((card,ind) => card.id = ind);
-                    console.log(room.storyTeller,'kartice-3');
 
                     socket.emit('storyteller',JSON.stringify(room.storyTeller));
                 }
-                console.log(room.players,room.cards,room.storyTeller);
             }
             io.to(roomName).emit('cardList', JSON.stringify(room.cards));
         } else {
@@ -313,7 +310,6 @@ io.on('connection',(socket)=>{
 
     socket.on('updateSession', (message) => {
         const receivedSession = JSON.parse(message);
-        console.log(receivedSession, 'STIGLO');
         const session = sessionStore.findSession(socket.sessionID);
         if (session) {
             sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
@@ -325,22 +321,20 @@ io.on('connection',(socket)=>{
             });
         }
         const session2 = sessionStore.findSession(socket.sessionID);
-        console.log(session2, 'STIGLO-2');
     })
 
     // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
         const room = getRoom(socket.userID);
-        console.log(sessionStore.findSession(socket.sessionID),'tukata');
         if(room){
             const {card, player} = removePlayer(socket.userID,room);
             if(card){
                 io.to(room.name).emit('cardList',JSON.stringify(room.cards));
             }
-            // if(room.cards.length === 0){ //znaci da vise nema kartica u ovoj sobi, pa moze soba da se obrise
-            //     rooms.delete(room.name);
-            //     io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
-            // }
+            if(room.cards.length === 0){ //znaci da vise nema kartica u ovoj sobi, pa moze soba da se obrise
+                rooms.delete(room.name);
+                io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
+            }
         }
     })
 });
