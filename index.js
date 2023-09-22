@@ -97,11 +97,6 @@ io.use((socket, next) => {
 io.on('connection',(socket)=>{
     console.log('New WS Connectionr...');
 
-    sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
-        userID: socket.userID,                      // javni id-
-        name: socket.name,                          // ime playera
-    });
-
     socket.emit("session", {            // ovde saljemo za frontapp
         sessionID: socket.sessionID,    // id uredjaja - sesije
         userID: socket.userID,          // javni id playera
@@ -115,7 +110,7 @@ io.on('connection',(socket)=>{
     socket.on('joinRoom', (data) => {
         const { playerName, roomName, reconnect } = JSON.parse(data);
         // Check if the room exists
-        const room = rooms.get(roomName,'kartice-0');
+        const room = rooms.get(roomName);
         if (room) {
             socket.join(roomName);
             socket.emit('roomJoined', room);
