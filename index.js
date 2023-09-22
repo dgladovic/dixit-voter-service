@@ -147,13 +147,14 @@ io.on('connection',(socket)=>{
                     voted: false,
                     votedOwnership: false
                 };
+                console.log(selectedPlayer,'KarTICA-5');
                 let playChecker = room.players.filter((player) => player.name === playerName);
                 if (playChecker.length <= 0) {
                     room.players.push(selectedPlayer);
                     sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
                         sessionID: socket.sessionID,
                         userID: socket.userID,                      
-                        userScore: selectedPlayer.score,                 
+                        userScore: socket.userScore,                 
                         name: socket.name,
                         roomName: roomName                    
                     });
@@ -223,7 +224,6 @@ io.on('connection',(socket)=>{
 
         choserInd = choosersArray.findIndex( (chooser) => chooser.name === playerSelection.player);
         let playerReference = room.players.find((player) => player.name === playerSelection.player)
-        console.log(playerSelection,playerReference,'stari');
         if(choserInd === -1){   // ukoliko nije pronadjen index, to znaci da igrac glasa za ovu kartu
             choosersArray.push(playerReference);
             playerReference.voted = true;
@@ -289,7 +289,11 @@ io.on('connection',(socket)=>{
                 // koji ce da kaze da za ovu kartu nema vlasnika, i da on treba da glasa za nju
             }
         })
-        io.to(room.name).emit('messageRes',JSON.stringify(room.players));
+        let mesResObj = {
+            players: room.players,
+            roomName: room.name
+        }
+        io.to(room.name).emit('messageRes',JSON.stringify(mesResObj));
     })
 
     socket.on('resetCards',(message)=>{
@@ -307,9 +311,27 @@ io.on('connection',(socket)=>{
         io.to(message).emit('playerOwnershipStatus',JSON.stringify(room.players));
     })
 
+    socket.on('updateSession', (message) => {
+        const receivedSession = JSON.parse(message);
+        console.log(receivedSession, 'STIGLO');
+        const session = sessionStore.findSession(socket.sessionID);
+        if (session) {
+            sessionStore.saveSession(socket.sessionID, {    //u privatnoj sesiji za uredjaj cuvamo
+                sessionID: socket.sessionID,
+                userID: socket.userID,
+                userScore: receivedSession.userScore,
+                name: socket.name,
+                roomName: receivedSession.roomName
+            });
+        }
+        const session2 = sessionStore.findSession(socket.sessionID);
+        console.log(session2, 'STIGLO-2');
+    })
+
     // ovo jos uvek nije zavrseno sa rooms
     socket.on('disconnect',()=>{
         const room = getRoom(socket.userID);
+        console.log(sessionStore.findSession(socket.sessionID),'tukata');
         if(room){
             const {card, player} = removePlayer(socket.userID,room);
             if(card){
