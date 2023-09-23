@@ -335,6 +335,5 @@ io.on('connection',(socket)=>{
 
 server.listen(PORT, ()=>{
     console.log(`Server runnning on port: ${PORT}`);
-    console.log(process.env.BACKEND_URL);
 });
 
