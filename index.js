@@ -160,8 +160,6 @@ io.on('connection',(socket)=>{
                 }
             }
             io.to(roomName).emit('cardList', JSON.stringify(room.cards));
-        } else {
-            socket.emit('roomNotFound');
         }
     });
 
@@ -179,13 +177,15 @@ io.on('connection',(socket)=>{
     socket.on('startGame',(message)=>{
         const parsed = JSON.parse(message);
         const room = rooms.get(parsed.room);
-        
-        const maxNumber = room.players.length;
-        const rndInt = randomIntFromInterval(1, maxNumber);
-        const startingStoryteller = room.players[rndInt-1];
-        room.storyTeller = startingStoryteller;
-
-        io.to(room.name).emit('storyteller', JSON.stringify(startingStoryteller));
+        if(room){
+            const maxNumber = room.players.length;
+            const rndInt = randomIntFromInterval(1, maxNumber);
+            const startingStoryteller = room.players[rndInt-1];
+            room.storyTeller = startingStoryteller;
+            io.to(room.name).emit('storyteller', JSON.stringify(startingStoryteller));
+        }else{
+            socket.emit('roomNotFound','reconnecting failed...');
+        }
     })
 
     // get who is storyteller
