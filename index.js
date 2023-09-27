@@ -18,9 +18,7 @@ const io = socketio(server,{
     }
 });
 
-let players = new Array();
 let rooms = new Map();
-let cards = new Array();
 
 function Card(id,owner,choosers,socketId){
     this.id = id;
@@ -77,6 +75,7 @@ io.use((socket, next) => {
         socket.name = session.name;
         socket.userScore = session.userScore;
         socket.roomName = session.roomName;
+        socket.color = session.color;
         return next();
       }
     }
@@ -89,6 +88,7 @@ io.use((socket, next) => {
     socket.name = name;
     socket.userScore = 0;
     socket.roomName = '';
+    socket.color = '';
     next();
   });
 
@@ -102,13 +102,14 @@ io.on('connection',(socket)=>{
         userID: socket.userID,          // javni id playera
         userScore: socket.userScore,
         name: socket.name,
-        roomName: socket.roomName
+        roomName: socket.roomName,
+        color: socket.color
     });
 
     io.emit('roomList', JSON.stringify(Array.from(rooms.values())));
 
     socket.on('joinRoom', (data) => {
-        const { playerName, roomName, reconnect } = JSON.parse(data);
+        const { playerName, roomName, reconnect, color } = JSON.parse(data);
         // Check if the room exists
         const room = rooms.get(roomName);
         if (room) {
@@ -119,7 +120,8 @@ io.on('connection',(socket)=>{
                 socketId: socket.userID,
                 score: 0,
                 voted: false,
-                votedOwnership: false
+                votedOwnership: false,
+                color: color
             };
             let playChecker = room.players.filter((player) => player.name === playerName);
             if (playChecker.length <= 0 && !reconnect) {
@@ -129,7 +131,8 @@ io.on('connection',(socket)=>{
                     userID: socket.userID,                      
                     userScore: selectedPlayer.score,                 
                     name: socket.name,
-                    roomName: roomName                    
+                    roomName: roomName,
+                    color: selectedPlayer.color                    
                 });
                 let newCard = new Card(room.cards.length, "", new Array(), socket.userID);
                 room.cards.push(newCard);
@@ -140,7 +143,8 @@ io.on('connection',(socket)=>{
                     socketId: socket.userID,
                     score: socket.userScore,
                     voted: false,
-                    votedOwnership: false
+                    votedOwnership: false,
+                    color: socket.color
                 };
                 let playChecker = room.players.filter((player) => player.name === playerName);
                 if (playChecker.length <= 0) {
@@ -150,7 +154,8 @@ io.on('connection',(socket)=>{
                         userID: socket.userID,                      
                         userScore: socket.userScore,                 
                         name: socket.name,
-                        roomName: roomName                    
+                        roomName: roomName,
+                        color: socket.color                    
                     });
                     let newCard = new Card(room.cards.length, "", new Array(), socket.userID);
                     room.cards.push(newCard);
@@ -312,7 +317,8 @@ io.on('connection',(socket)=>{
                 userID: socket.userID,
                 userScore: receivedSession.userScore,
                 name: socket.name,
-                roomName: receivedSession.roomName
+                roomName: receivedSession.roomName,
+                color: socket.color
             });
         }
     })
