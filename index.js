@@ -290,7 +290,7 @@ io.on('connection',(socket)=>{
             players: room.players,
             roomName: room.name
         }
-        io.to(room.name).emit('messageRes',JSON.stringify(mesResObj));
+        io.to(room.name).emit('scoreUpdate',JSON.stringify(mesResObj));
     })
 
     socket.on('resetCards',(message)=>{
