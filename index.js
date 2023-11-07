@@ -260,12 +260,13 @@ io.on('connection',(socket)=>{
         const room = rooms.get(playerReference.room);
         let storyTeller = room.players.find((player) => player.name === playerReference.name);
         room.cards.forEach( (card,cardIndex) => {
+            console.log('tet0',card)
             if(card.owner.name === storyTeller.name){ // ako je vlasnik karte pripovedac
                 if(card.choosers.length === 0|| 
                 card.choosers.length === room.cards.length - 1){ // ukoliko niko nije glasaso za pripovedaca ili svi
                     room.players.forEach( (player) => player.score = player.score + 2);
                     storyTeller.score = storyTeller.score - 2;
-                    console.log('tet1');
+                    console.log('tet1',room.players);
                 }
                 else{
                     card.choosers.forEach((chooser) =>{
@@ -273,7 +274,7 @@ io.on('connection',(socket)=>{
                         cardChooserReference.score = cardChooserReference.score + 2;  //ovde treba da se u owners prosledjuju objekti i reference ka njima a ne vrednosti stringova
                     })
                     storyTeller.score = storyTeller.score + 2;
-                    console.log('tet2');
+                    console.log('tet2',room.players);
                 }
             }
             else{ // ovde napisati logiku za racunanje poena za durge igr
@@ -282,7 +283,7 @@ io.on('connection',(socket)=>{
                 if(cardOwner && cardOwnerReference){    // ova linija resava problem ako na karti ne postoji owner, ali to je nemougc scenario, nego dvoje ljudi greskom
                     card.choosers.forEach((e) => {      // glasaju za istu kartu kao vlasnici, ovo treba da se error checkuje
                         cardOwnerReference.score = cardOwnerReference.score + 1;
-                    console.log('tet3');
+                    console.log('tet3',room.players);
                     });
                 }
                 // ukoliko nema cardOwnera, onda treba da se napravi novi message
