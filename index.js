@@ -289,6 +289,7 @@ io.on('connection',(socket)=>{
                 // koji ce da kaze da za ovu kartu nema vlasnika, i da on treba da glasa za nju
             }
         })
+        console.log(room.players,'tet4');
         let mesResObj = {
             players: room.players,
             roomName: room.name
