@@ -219,6 +219,8 @@ io.on('connection',(socket)=>{
         let chosenCard = room.cards[cardInd];
         let choosersArray = chosenCard.choosers;
 
+        console.log('tet-meg',playerSelection,cardInd,chosenCard);
+
         choserInd = choosersArray.findIndex( (chooser) => chooser.name === playerSelection.player);
         let playerReference = room.players.find((player) => player.name === playerSelection.player)
         if(choserInd === -1){   // ukoliko nije pronadjen index, to znaci da igrac glasa za ovu kartu
@@ -232,6 +234,7 @@ io.on('connection',(socket)=>{
                 }
             })
         }
+        console.log('tet-meg-1',choserInd,playerReference,chosenCard);
         io.to(room.name).emit('message',JSON.stringify(room.cards));
         // mozda ovde slati samo igrace koji glasaju a da se storyteller izbaci iz ovog niza
 
