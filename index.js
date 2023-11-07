@@ -227,12 +227,12 @@ io.on('connection',(socket)=>{
             choosersArray.push(playerReference);
             playerReference.voted = true;
             // potrebno je skinuti glasove sa ostalih karata ukoliko je glasao za njih
-            room.cards.forEach((card,index) => {
-                if(index !== cardInd){      //samo ako ta karta se ne poklapa sa vec glasanom skidanje glasova
-                    let voterPosition = card.choosers.findIndex((chooser) => chooser.name === playerReference.name);
-                    card.choosers.splice(voterPosition,1);
-                }
-            })
+            // room.cards.forEach((card,index) => {
+            //     if(index !== cardInd){      //samo ako ta karta se ne poklapa sa vec glasanom skidanje glasova
+            //         let voterPosition = card.choosers.findIndex((chooser) => chooser.name === playerReference.name);
+            //         card.choosers.splice(voterPosition,1);
+            //     }
+            // })
         }
         console.log('tet-meg-1',choserInd,playerReference,chosenCard);
         io.to(room.name).emit('message',JSON.stringify(room.cards));
