@@ -253,6 +253,8 @@ io.on('connection',(socket)=>{
         chosenCard.owner = playerReference;
         playerReference.votedOwnership = true;
 
+        console.log('tet-meg-2',playerSelection,chosenCard,playerReference);
+
         io.to(room.name).emit('message',JSON.stringify(room.cards));
         io.to(room.name).emit('playerOwnershipStatus',JSON.stringify(room.players));
     })
