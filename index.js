@@ -265,6 +265,7 @@ io.on('connection',(socket)=>{
                 card.choosers.length === room.cards.length - 1){ // ukoliko niko nije glasaso za pripovedaca ili svi
                     room.players.forEach( (player) => player.score = player.score + 2);
                     storyTeller.score = storyTeller.score - 2;
+                    console.log('tet1');
                 }
                 else{
                     card.choosers.forEach((chooser) =>{
@@ -272,6 +273,7 @@ io.on('connection',(socket)=>{
                         cardChooserReference.score = cardChooserReference.score + 2;  //ovde treba da se u owners prosledjuju objekti i reference ka njima a ne vrednosti stringova
                     })
                     storyTeller.score = storyTeller.score + 2;
+                    console.log('tet2');
                 }
             }
             else{ // ovde napisati logiku za racunanje poena za durge igr
@@ -280,6 +282,7 @@ io.on('connection',(socket)=>{
                 if(cardOwner && cardOwnerReference){    // ova linija resava problem ako na karti ne postoji owner, ali to je nemougc scenario, nego dvoje ljudi greskom
                     card.choosers.forEach((e) => {      // glasaju za istu kartu kao vlasnici, ovo treba da se error checkuje
                         cardOwnerReference.score = cardOwnerReference.score + 1;
+                    console.log('tet3');
                     });
                 }
                 // ukoliko nema cardOwnera, onda treba da se napravi novi message
